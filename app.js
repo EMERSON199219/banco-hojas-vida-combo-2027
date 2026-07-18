@@ -7,12 +7,12 @@ const RECORDS_COLLECTION = 'combo2027_records';
 
 // Reemplace estos valores con los de su proyecto Firebase para activar sincronizacion multi-dispositivo.
 const firebaseConfig = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: ''
+  apiKey: 'AIzaSyDHKR1VUkqAaTJlKa_v9euo3aFb4E2X1oA',
+  authDomain: 'cronograma-47eed.firebaseapp.com',
+  projectId: 'cronograma-47eed',
+  storageBucket: 'cronograma-47eed.firebasestorage.app',
+  messagingSenderId: '527539901782',
+  appId: '1:527539901782:web:fa171e6fe41898be54b2f7'
 };
 
 const profileGroups = {
