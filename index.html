@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banco de Hojas de Vida Combo 2027</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="background-shape shape-one"></div>
+  <div class="background-shape shape-two"></div>
+
+  <main class="shell">
+    <section id="loginView" class="panel auth-panel active" aria-labelledby="loginTitle">
+        <div class="brand-strip">
+          <img class="brand-logo" src="logo-combo.png.jpeg" alt="Logo Combo 2027">
+          <div class="brand-text">
+            <span class="brand-kicker">Sistema interno</span>
+            <strong>Combo 2027</strong>
+          </div>
+        </div>
+      <div class="panel-badge">Acceso</div>
+      <h1 id="loginTitle">Banco de Hojas de Vida Combo 2027</h1>
+      <p class="panel-copy">Ingrese con las credenciales autorizadas para administrar registros, filtrar perfiles y exportar la base en Excel.</p>
+
+      <form id="loginForm" class="stack-form">
+        <label>
+          <span>Usuario (correo)</span>
+          <input id="username" name="username" type="text" autocomplete="username" placeholder="Ingrese el correo de acceso" required>
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Ingrese la contraseña" required>
+        </label>
+        <p id="loginError" class="error-message" aria-live="polite"></p>
+        <button type="submit" class="primary-btn">Entrar</button>
+      </form>
+    </section>
+
+    <section id="appView" class="panel dashboard" aria-labelledby="dashboardTitle" hidden>
+      <header class="topbar">
+        <div class="topbar-brand">
+          <img class="brand-logo brand-logo-header" src="logo-combo.png.jpeg" alt="Logo Combo 2027">
+          <div class="panel-badge">Panel principal</div>
+          <div>
+            <h2 id="dashboardTitle">Gestión de hojas de vida</h2>
+            <p class="panel-copy">Registre aspirantes, busque por profesión o perfil, y mantenga la base lista para exportación.</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span id="syncStatus" class="sync-status sync-offline">Sincronizacion local</span>
+          <button id="exportBtn" type="button" class="secondary-btn">Exportar a Excel</button>
+          <button id="logoutBtn" type="button" class="ghost-btn">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <section class="grid-layout">
+        <article class="card">
+          <div class="card-head">
+            <h3 id="formTitle">Nuevo registro</h3>
+            <p>Los datos se guardan localmente en este navegador.</p>
+          </div>
+
+          <form id="candidateForm" class="stack-form candidate-form">
+            <input id="recordId" name="recordId" type="hidden">
+
+            <div class="field-grid two-columns">
+              <label>
+                <span>Nombres</span>
+                <input id="firstName" name="firstName" type="text" placeholder="Ej. María Fernanda" required>
+              </label>
+              <label>
+                <span>Apellidos</span>
+                <input id="lastName" name="lastName" type="text" placeholder="Ej. Gómez Pérez" required>
+              </label>
+            </div>
+
+            <div class="field-grid two-columns">
+              <label>
+                <span>Cédula</span>
+                <input id="documentId" name="documentId" type="text" inputmode="numeric" placeholder="Número de cédula" required>
+              </label>
+              <label>
+                <span>Perfil o profesión</span>
+                <select id="profile" name="profile" required>
+                  <option value="">Seleccione una opción</option>
+                </select>
+              </label>
+            </div>
+
+            <label id="customProfileWrapper" class="hidden-field" hidden>
+              <span>Otra profesión u oficio</span>
+              <input id="customProfile" name="customProfile" type="text" placeholder="Escriba la profesión, oficio o cargo">
+            </label>
+
+            <div class="field-grid two-columns">
+              <label>
+                <span>Referencia familiar</span>
+                <input id="familyReference" name="familyReference" type="text" placeholder="Nombre del familiar" required>
+              </label>
+              <label>
+                <span>Teléfono</span>
+                <input id="phone" name="phone" type="tel" inputmode="tel" placeholder="Número telefónico" required>
+              </label>
+            </div>
+
+            <div class="field-grid two-columns">
+              <label>
+                <span>Disponibilidad para viajar a otra ciudad</span>
+                <select id="availableOtherCity" name="availableOtherCity" required>
+                  <option value="">Seleccione una opción</option>
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                </select>
+              </label>
+              <label>
+                <span>Zona de influencia</span>
+                <input id="zoneInfluence" name="zoneInfluence" type="text" placeholder="Escriba la zona de influencia">
+              </label>
+            </div>
+
+            <label>
+              <span>Correo electrónico</span>
+              <input id="email" name="email" type="email" inputmode="email" placeholder="correo@ejemplo.com" required>
+            </label>
+
+            <div class="form-actions">
+              <button id="saveBtn" type="submit" class="primary-btn">Guardar registro</button>
+              <button id="cancelEditBtn" type="button" class="ghost-btn" hidden>Cancelar edición</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="card wide-card">
+          <div class="card-head inline-head">
+            <div>
+              <h3>Base registrada</h3>
+              <p>Busque por nombres, cédula, profesión, disponibilidad o zona de influencia.</p>
+            </div>
+            <div class="search-group">
+              <input id="searchInput" type="search" placeholder="Buscar por profesión, perfil, nombre, cédula, disponibilidad o zona">
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-box">
+              <span>Total registros</span>
+              <strong id="totalRecords">0</strong>
+            </div>
+            <div class="stat-box">
+              <span>Resultados filtrados</span>
+              <strong id="filteredRecords">0</strong>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombres</th>
+                  <th>Apellidos</th>
+                  <th>Cédula</th>
+                  <th>Perfil o profesión</th>
+                  <th>Referencia familiar</th>
+                  <th>Teléfono</th>
+                  <th>Disp. viajar otra ciudad</th>
+                  <th>Zona de influencia</th>
+                  <th>Correo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="recordsTableBody">
+                <tr>
+                  <td colspan="10" class="empty-state">No hay registros todavía.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
