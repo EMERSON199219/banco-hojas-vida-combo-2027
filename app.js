@@ -105,6 +105,8 @@ const exportBtn = document.getElementById('exportBtn');
 const totalRecords = document.getElementById('totalRecords');
 const filteredRecords = document.getElementById('filteredRecords');
 const filteredStatBox = document.getElementById('filteredStatBox');
+const searchOnlyHint = document.getElementById('searchOnlyHint');
+const tableWrap = document.getElementById('tableWrap');
 const recordIdInput = document.getElementById('recordId');
 const formTitle = document.getElementById('formTitle');
 const saveBtn = document.getElementById('saveBtn');
@@ -431,8 +433,20 @@ function renderTable() {
 
   totalRecords.textContent = String(records.length);
   filteredRecords.textContent = String(filtered.length);
+
   if (filteredStatBox) {
     filteredStatBox.hidden = !isSearching;
+  }
+  if (searchOnlyHint) {
+    searchOnlyHint.hidden = isSearching;
+  }
+  if (tableWrap) {
+    tableWrap.hidden = !isSearching;
+  }
+
+  if (!isSearching) {
+    recordsTableBody.innerHTML = '<tr><td colspan="10" class="empty-state">Escribe en el buscador para ver registros.</td></tr>';
+    return;
   }
 
   if (filtered.length === 0) {
