@@ -8,12 +8,12 @@ const FIREBASE_AUTH_REQUIRED = false;
 
 // Reemplace estos valores con los de su proyecto Firebase para activar sincronizacion multi-dispositivo.
 const firebaseConfig = {
-  apiKey: 'AIzaSyDHKR1VUkqAaTJlKa_v9euo3aFb4E2X1oA',
-  authDomain: 'cronograma-47eed.firebaseapp.com',
-  projectId: 'cronograma-47eed',
-  storageBucket: 'cronograma-47eed.firebasestorage.app',
-  messagingSenderId: '527539901782',
-  appId: '1:527539901782:web:fa171e6fe41898be54b2f7'
+  apiKey: 'AIzaSyBaFJ0krYxdfUXz3YxrUNOiXpVCfobCxZc',
+  authDomain: 'banco-de-hojas-de-vida-b3794.firebaseapp.com',
+  projectId: 'banco-de-hojas-de-vida-b3794',
+  storageBucket: 'banco-de-hojas-de-vida-b3794.firebasestorage.app',
+  messagingSenderId: '49810198968',
+  appId: '1:49810198968:web:0c55d0c33aa8ad2e63ff4d'
 };
 
 const profileGroups = {
