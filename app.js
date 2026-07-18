@@ -4,6 +4,7 @@ const STORAGE_KEY = 'combo2027Records';
 const SESSION_KEY = 'combo2027Authenticated';
 const OTHER_PROFILE_VALUE = '__OTHER__';
 const RECORDS_COLLECTION = 'combo2027_records';
+const FIREBASE_AUTH_REQUIRED = false;
 
 // Reemplace estos valores con los de su proyecto Firebase para activar sincronizacion multi-dispositivo.
 const firebaseConfig = {
@@ -134,6 +135,10 @@ function isCloudAuthEnabled() {
   return cloudReady && cloudAuth;
 }
 
+function canUseCloudSync() {
+  return cloudReady && cloudDb && (!FIREBASE_AUTH_REQUIRED || (cloudAuth && cloudAuth.currentUser));
+}
+
 function toRecordShape(item) {
   return {
     id: item.id,
@@ -169,7 +174,11 @@ function stopCloudRecordsListener() {
 }
 
 function startCloudRecordsListener() {
-  if (!cloudDb || !cloudAuth || !cloudAuth.currentUser) {
+  if (!cloudDb) {
+    return;
+  }
+
+  if (FIREBASE_AUTH_REQUIRED && (!cloudAuth || !cloudAuth.currentUser)) {
     return;
   }
 
@@ -204,8 +213,14 @@ function initializeCloudSync() {
     cloudDb = firebase.firestore();
     cloudAuth = firebase.auth();
     cloudReady = true;
-    setSyncStatus('Nube lista - inicie sesion', 'sync-pending');
 
+    if (!FIREBASE_AUTH_REQUIRED) {
+      setSyncStatus('Sincronizando en nube...', 'sync-pending');
+      startCloudRecordsListener();
+      return;
+    }
+
+    setSyncStatus('Nube lista - inicie sesion', 'sync-pending');
     cloudAuth.onAuthStateChanged((user) => {
       if (user) {
         setAuthenticated(true);
@@ -395,7 +410,7 @@ async function upsertRecord(record) {
   saveRecords();
   renderTable();
 
-  if (!isCloudAuthEnabled() || !cloudAuth.currentUser) {
+  if (!canUseCloudSync()) {
     return;
   }
 
@@ -449,7 +464,7 @@ async function deleteRecord(recordId) {
   saveRecords();
   renderTable();
 
-  if (isCloudAuthEnabled() && cloudAuth.currentUser) {
+  if (canUseCloudSync()) {
     try {
       await cloudDb.collection(RECORDS_COLLECTION).doc(recordId).delete();
       setSyncStatus('Sincronizado en nube', 'sync-online');
@@ -492,7 +507,7 @@ loginForm.addEventListener('submit', async (event) => {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
-  if (isCloudAuthEnabled()) {
+  if (FIREBASE_AUTH_REQUIRED && isCloudAuthEnabled()) {
     try {
       setSyncStatus('Validando acceso...', 'sync-pending');
       await cloudAuth.signInWithEmailAndPassword(username, password);
@@ -518,7 +533,7 @@ loginForm.addEventListener('submit', async (event) => {
 });
 
 logoutBtn.addEventListener('click', async () => {
-  if (isCloudAuthEnabled() && cloudAuth.currentUser) {
+  if (FIREBASE_AUTH_REQUIRED && isCloudAuthEnabled() && cloudAuth.currentUser) {
     await cloudAuth.signOut();
   }
 
@@ -587,7 +602,7 @@ populateProfiles();
 renderTable();
 initializeCloudSync();
 
-if (isAuthenticated() && !isCloudAuthEnabled()) {
+if (isAuthenticated() && !FIREBASE_AUTH_REQUIRED) {
   showApp();
 } else {
   showLogin();
