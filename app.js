@@ -104,6 +104,7 @@ const searchInput = document.getElementById('searchInput');
 const exportBtn = document.getElementById('exportBtn');
 const totalRecords = document.getElementById('totalRecords');
 const filteredRecords = document.getElementById('filteredRecords');
+const filteredStatBox = document.getElementById('filteredStatBox');
 const recordIdInput = document.getElementById('recordId');
 const formTitle = document.getElementById('formTitle');
 const saveBtn = document.getElementById('saveBtn');
@@ -191,6 +192,24 @@ async function migrateLocalRecordsToCloud(localRecords) {
   await batch.commit();
 }
 
+function getLocalOnlyRecords(cloudRecords, localRecords) {
+  const cloudIds = new Set(cloudRecords.map((record) => record.id));
+  return localRecords.filter((record) => !cloudIds.has(record.id));
+}
+
+function mergeRecordsWithoutDuplicates(primaryRecords, secondaryRecords) {
+  const merged = [...primaryRecords];
+  const existingIds = new Set(primaryRecords.map((record) => record.id));
+
+  secondaryRecords.forEach((record) => {
+    if (!existingIds.has(record.id)) {
+      merged.push(record);
+    }
+  });
+
+  return merged;
+}
+
 function startCloudRecordsListener() {
   if (!cloudDb) {
     return;
@@ -204,6 +223,8 @@ function startCloudRecordsListener() {
   setSyncStatus('Sincronizando en nube...', 'sync-pending');
 
   unsubscribeCloudRecords = cloudDb.collection(RECORDS_COLLECTION).onSnapshot(async (snapshot) => {
+    const cloudRecords = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
     if (!initialCloudSyncDone) {
       initialCloudSyncDone = true;
 
@@ -216,9 +237,25 @@ function startCloudRecordsListener() {
           setSyncStatus('Error al migrar datos a nube', 'sync-offline');
         }
       }
+
+      const localOnlyRecords = getLocalOnlyRecords(cloudRecords, records);
+      const mergedRecords = mergeRecordsWithoutDuplicates(cloudRecords, localOnlyRecords);
+      applyRecords(mergedRecords);
+
+      if (localOnlyRecords.length > 0) {
+        try {
+          setSyncStatus('Completando sincronizacion pendiente...', 'sync-pending');
+          await migrateLocalRecordsToCloud(localOnlyRecords);
+        } catch {
+          setSyncStatus('No se pudo sincronizar todo', 'sync-offline');
+          return;
+        }
+      }
+
+      setSyncStatus('Sincronizado en nube', 'sync-online');
+      return;
     }
 
-    const cloudRecords = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     applyRecords(cloudRecords);
     setSyncStatus('Sincronizado en nube', 'sync-online');
   }, () => {
@@ -390,8 +427,13 @@ function filterRecords() {
 
 function renderTable() {
   const filtered = filterRecords();
+  const isSearching = searchTerm.trim().length > 0;
+
   totalRecords.textContent = String(records.length);
   filteredRecords.textContent = String(filtered.length);
+  if (filteredStatBox) {
+    filteredStatBox.hidden = !isSearching;
+  }
 
   if (filtered.length === 0) {
     recordsTableBody.innerHTML = '<tr><td colspan="10" class="empty-state">No se encontraron registros.</td></tr>';
