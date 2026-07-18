@@ -116,6 +116,7 @@ let cloudDb = null;
 let cloudReady = false;
 let cloudAuth = null;
 let unsubscribeCloudRecords = null;
+let initialCloudSyncDone = false;
 
 function hasFirebaseConfig() {
   return Object.values(firebaseConfig).every((value) => String(value || '').trim() !== '');
@@ -171,6 +172,23 @@ function stopCloudRecordsListener() {
     unsubscribeCloudRecords();
     unsubscribeCloudRecords = null;
   }
+
+  initialCloudSyncDone = false;
+}
+
+async function migrateLocalRecordsToCloud(localRecords) {
+  if (!cloudDb || localRecords.length === 0) {
+    return;
+  }
+
+  const batch = cloudDb.batch();
+  localRecords.forEach((record) => {
+    const normalized = toRecordShape(record);
+    const docRef = cloudDb.collection(RECORDS_COLLECTION).doc(normalized.id);
+    batch.set(docRef, normalized, { merge: true });
+  });
+
+  await batch.commit();
 }
 
 function startCloudRecordsListener() {
@@ -185,7 +203,21 @@ function startCloudRecordsListener() {
   stopCloudRecordsListener();
   setSyncStatus('Sincronizando en nube...', 'sync-pending');
 
-  unsubscribeCloudRecords = cloudDb.collection(RECORDS_COLLECTION).onSnapshot((snapshot) => {
+  unsubscribeCloudRecords = cloudDb.collection(RECORDS_COLLECTION).onSnapshot(async (snapshot) => {
+    if (!initialCloudSyncDone) {
+      initialCloudSyncDone = true;
+
+      if (snapshot.empty && records.length > 0) {
+        try {
+          setSyncStatus('Migrando datos locales a nube...', 'sync-pending');
+          await migrateLocalRecordsToCloud(records);
+          return;
+        } catch {
+          setSyncStatus('Error al migrar datos a nube', 'sync-offline');
+        }
+      }
+    }
+
     const cloudRecords = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     applyRecords(cloudRecords);
     setSyncStatus('Sincronizado en nube', 'sync-online');
