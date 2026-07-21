@@ -306,6 +306,10 @@ function initializeCloudSync() {
 
     setSyncStatus('Nube lista - inicie sesion', 'sync-pending');
     cloudAuth.onAuthStateChanged((user) => {
+      if (isPublicMode) {
+        return;
+      }
+
       if (user) {
         setAuthenticated(true);
         loginError.textContent = '';
