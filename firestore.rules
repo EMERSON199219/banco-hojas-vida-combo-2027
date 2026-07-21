@@ -20,9 +20,9 @@ service cloud.firestore {
     }
 
     match /combo2027_records/{recordId} {
-      allow read: if request.auth != null;
-      allow create: if isPublicCreate(recordId) || request.auth != null;
-      allow update, delete: if request.auth != null;
+      allow read: if true;
+      allow create: if isPublicCreate(recordId);
+      allow update, delete: if true;
     }
 
     match /{document=**} {
