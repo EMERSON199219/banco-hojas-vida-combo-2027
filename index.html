@@ -57,10 +57,13 @@
         </div>
         <div class="topbar-actions">
           <span id="syncStatus" class="sync-status sync-offline">Sincronizacion local</span>
+          <button id="shareLinkBtn" type="button" class="secondary-btn">Copiar enlace de inscripcion</button>
           <button id="exportBtn" type="button" class="secondary-btn">Exportar a Excel</button>
           <button id="logoutBtn" type="button" class="ghost-btn">Cerrar sesión</button>
         </div>
       </header>
+
+      <p id="shareLinkNotice" class="share-link-notice">Comparte el enlace de inscripcion para que cada persona registre sus datos sin ver la base completa.</p>
 
       <section class="grid-layout">
         <article class="card">
@@ -188,6 +191,88 @@
           </div>
         </article>
       </section>
+    </section>
+
+    <section id="publicView" class="panel auth-panel public-panel" aria-labelledby="publicTitle" hidden>
+      <div class="brand-strip">
+        <img class="brand-logo" src="logo-combo.png.jpeg" alt="Logo Combo 2027">
+        <div class="brand-text">
+          <span class="brand-kicker">Inscripcion</span>
+          <strong>Combo 2027</strong>
+        </div>
+      </div>
+      <div class="panel-badge">Formulario publico</div>
+      <h1 id="publicTitle">Registro de hojas de vida</h1>
+      <p class="panel-copy">Complete una sola vez este formulario. La informacion enviada no permite consultar otras inscripciones.</p>
+      <p id="publicIntroMessage" class="public-message public-message-info">Verificando disponibilidad del formulario...</p>
+
+      <form id="publicCandidateForm" class="stack-form candidate-form" hidden>
+        <div class="field-grid two-columns">
+          <label>
+            <span>Nombres</span>
+            <input id="publicFirstName" name="firstName" type="text" placeholder="Ej. Maria Fernanda" required>
+          </label>
+          <label>
+            <span>Apellidos</span>
+            <input id="publicLastName" name="lastName" type="text" placeholder="Ej. Gomez Perez" required>
+          </label>
+        </div>
+
+        <div class="field-grid two-columns">
+          <label>
+            <span>Cédula</span>
+            <input id="publicDocumentId" name="documentId" type="text" inputmode="numeric" placeholder="Numero de cedula" required>
+          </label>
+          <label>
+            <span>Perfil o profesión</span>
+            <select id="publicProfile" name="profile" required>
+              <option value="">Seleccione una opción</option>
+            </select>
+          </label>
+        </div>
+
+        <label id="publicCustomProfileWrapper" class="hidden-field" hidden>
+          <span>Otra profesión u oficio</span>
+          <input id="publicCustomProfile" name="customProfile" type="text" placeholder="Escriba la profesion, oficio o cargo">
+        </label>
+
+        <div class="field-grid two-columns">
+          <label>
+            <span>Referencia familiar</span>
+            <input id="publicFamilyReference" name="familyReference" type="text" placeholder="Nombre del familiar" required>
+          </label>
+          <label>
+            <span>Teléfono</span>
+            <input id="publicPhone" name="phone" type="tel" inputmode="tel" placeholder="Numero telefonico" required>
+          </label>
+        </div>
+
+        <div class="field-grid two-columns">
+          <label>
+            <span>Disponibilidad para viajar a otra ciudad</span>
+            <select id="publicAvailableOtherCity" name="availableOtherCity" required>
+              <option value="">Seleccione una opción</option>
+              <option value="Sí">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </label>
+          <label>
+            <span>Zona de influencia</span>
+            <input id="publicZoneInfluence" name="zoneInfluence" type="text" placeholder="Escriba la zona de influencia">
+          </label>
+        </div>
+
+        <label>
+          <span>Correo electrónico</span>
+          <input id="publicEmail" name="email" type="email" inputmode="email" placeholder="correo@ejemplo.com" required>
+        </label>
+
+        <div class="form-actions">
+          <button id="publicSaveBtn" type="submit" class="primary-btn">Enviar registro</button>
+        </div>
+      </form>
+
+      <p id="publicSubmitMessage" class="public-message" hidden></p>
     </section>
   </main>
 </body>

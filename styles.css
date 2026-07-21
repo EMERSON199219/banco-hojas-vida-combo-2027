@@ -396,6 +396,38 @@ select:focus {
   font-size: 0.95rem;
 }
 
+.share-link-notice,
+.public-message {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(52, 102, 26, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+}
+
+.public-panel {
+  width: min(760px, 100%);
+}
+
+.public-message-info {
+  color: #0f5f7a;
+  background: rgba(47, 184, 232, 0.12);
+  border-color: rgba(47, 184, 232, 0.22);
+}
+
+.public-message-success {
+  color: #1f6a14;
+  background: rgba(103, 197, 47, 0.12);
+  border-color: rgba(47, 122, 29, 0.22);
+}
+
+.public-message-error {
+  color: var(--danger);
+  background: rgba(201, 32, 53, 0.08);
+  border-color: rgba(201, 32, 53, 0.18);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

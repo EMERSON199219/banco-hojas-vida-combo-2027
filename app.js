@@ -4,7 +4,9 @@ const STORAGE_KEY = 'combo2027Records';
 const SESSION_KEY = 'combo2027Authenticated';
 const OTHER_PROFILE_VALUE = '__OTHER__';
 const RECORDS_COLLECTION = 'combo2027_records';
-const FIREBASE_AUTH_REQUIRED = false;
+const PUBLIC_MODE_QUERY_PARAM = 'registro';
+const PUBLIC_MODE_QUERY_VALUE = '1';
+const FIREBASE_AUTH_REQUIRED = true;
 
 // Reemplace estos valores con los de su proyecto Firebase para activar sincronizacion multi-dispositivo.
 const firebaseConfig = {
@@ -92,6 +94,7 @@ const profileGroups = {
 
 const loginView = document.getElementById('loginView');
 const appView = document.getElementById('appView');
+const publicView = document.getElementById('publicView');
 const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -112,6 +115,15 @@ const formTitle = document.getElementById('formTitle');
 const saveBtn = document.getElementById('saveBtn');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
 const syncStatus = document.getElementById('syncStatus');
+const shareLinkBtn = document.getElementById('shareLinkBtn');
+const shareLinkNotice = document.getElementById('shareLinkNotice');
+const publicCandidateForm = document.getElementById('publicCandidateForm');
+const publicProfileSelect = document.getElementById('publicProfile');
+const publicCustomProfileWrapper = document.getElementById('publicCustomProfileWrapper');
+const publicCustomProfileInput = document.getElementById('publicCustomProfile');
+const publicIntroMessage = document.getElementById('publicIntroMessage');
+const publicSubmitMessage = document.getElementById('publicSubmitMessage');
+const publicSaveBtn = document.getElementById('publicSaveBtn');
 
 let records = loadRecords();
 let searchTerm = '';
@@ -120,6 +132,7 @@ let cloudReady = false;
 let cloudAuth = null;
 let unsubscribeCloudRecords = null;
 let initialCloudSyncDone = false;
+const isPublicMode = new URLSearchParams(window.location.search).get(PUBLIC_MODE_QUERY_PARAM) === PUBLIC_MODE_QUERY_VALUE;
 
 function hasFirebaseConfig() {
   return Object.values(firebaseConfig).every((value) => String(value || '').trim() !== '');
@@ -355,33 +368,92 @@ function setAuthenticated(value) {
 function showApp() {
   loginView.hidden = true;
   appView.hidden = false;
+  if (publicView) {
+    publicView.hidden = true;
+  }
 }
 
 function showLogin() {
   appView.hidden = true;
   loginView.hidden = false;
+  if (publicView) {
+    publicView.hidden = true;
+  }
+}
+
+function showPublicForm() {
+  loginView.hidden = true;
+  appView.hidden = true;
+  if (publicView) {
+    publicView.hidden = false;
+  }
 }
 
 function normalizeText(value) {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
+function normalizeDocumentId(value) {
+  return String(value || '').replace(/\D/g, '').trim();
+}
+
+function buildRecordKey(documentId) {
+  const normalizedDocument = normalizeDocumentId(documentId);
+  return normalizedDocument ? `doc_${normalizedDocument}` : '';
+}
+
+function isValidRecordKey(recordId) {
+  return typeof recordId === 'string' && recordId.startsWith('doc_') && recordId.length > 4;
+}
+
+function getPublicRegistrationUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.set(PUBLIC_MODE_QUERY_PARAM, PUBLIC_MODE_QUERY_VALUE);
+  return url.toString();
+}
+
 function getFormData() {
   const selectedProfile = profileSelect.value;
   const customProfile = customProfileInput.value.trim();
   const profile = selectedProfile === OTHER_PROFILE_VALUE ? customProfile : selectedProfile;
+  const normalizedDocumentId = normalizeDocumentId(document.getElementById('documentId').value);
+  const currentRecordId = recordIdInput.value;
+  const nextRecordId = currentRecordId && currentRecordId === buildRecordKey(document.getElementById('documentId').value)
+    ? currentRecordId
+    : buildRecordKey(normalizedDocumentId);
 
   return {
-    id: recordIdInput.value || crypto.randomUUID(),
+    id: nextRecordId,
     firstName: document.getElementById('firstName').value.trim(),
     lastName: document.getElementById('lastName').value.trim(),
-    documentId: document.getElementById('documentId').value.trim(),
+    documentId: normalizedDocumentId,
     profile: profile.trim(),
     familyReference: document.getElementById('familyReference').value.trim(),
     phone: document.getElementById('phone').value.trim(),
     availableOtherCity: document.getElementById('availableOtherCity').value,
     zoneInfluence: document.getElementById('zoneInfluence').value.trim(),
     email: document.getElementById('email').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+}
+
+function getPublicFormData() {
+  const selectedProfile = publicProfileSelect.value;
+  const customProfile = publicCustomProfileInput.value.trim();
+  const profile = selectedProfile === OTHER_PROFILE_VALUE ? customProfile : selectedProfile;
+  const normalizedDocumentId = normalizeDocumentId(document.getElementById('publicDocumentId').value);
+
+  return {
+    id: buildRecordKey(normalizedDocumentId),
+    firstName: document.getElementById('publicFirstName').value.trim(),
+    lastName: document.getElementById('publicLastName').value.trim(),
+    documentId: normalizedDocumentId,
+    profile: profile.trim(),
+    familyReference: document.getElementById('publicFamilyReference').value.trim(),
+    phone: document.getElementById('publicPhone').value.trim(),
+    availableOtherCity: document.getElementById('publicAvailableOtherCity').value,
+    zoneInfluence: document.getElementById('publicZoneInfluence').value.trim(),
+    email: document.getElementById('publicEmail').value.trim(),
     createdAt: new Date().toISOString()
   };
 }
@@ -402,6 +474,38 @@ function toggleCustomProfile(show) {
   if (!show) {
     customProfileInput.value = '';
   }
+}
+
+function togglePublicCustomProfile(show) {
+  if (!publicCustomProfileWrapper || !publicCustomProfileInput) {
+    return;
+  }
+
+  publicCustomProfileWrapper.hidden = !show;
+  publicCustomProfileWrapper.classList.toggle('hidden-field', show);
+  publicCustomProfileInput.required = show;
+  if (!show) {
+    publicCustomProfileInput.value = '';
+  }
+}
+
+function updatePublicMessage(message, variant, persist = true) {
+  if (!publicSubmitMessage) {
+    return;
+  }
+
+  publicSubmitMessage.textContent = message;
+  publicSubmitMessage.hidden = !message;
+  publicSubmitMessage.className = `public-message ${variant}`.trim();
+}
+
+function setPublicIntro(message, variant = 'public-message-info') {
+  if (!publicIntroMessage) {
+    return;
+  }
+
+  publicIntroMessage.textContent = message;
+  publicIntroMessage.className = `public-message ${variant}`.trim();
 }
 
 function filterRecords() {
@@ -476,7 +580,7 @@ function renderTable() {
 }
 
 function escapeHtml(value) {
-  return value
+  return String(value || '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -484,13 +588,79 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
-async function upsertRecord(record) {
-  const index = records.findIndex((item) => item.id === record.id);
+function getDuplicateRecordByDocument(documentId, recordIdToIgnore = '') {
+  const normalizedDocument = normalizeDocumentId(documentId);
+  return records.find((record) => normalizeDocumentId(record.documentId) === normalizedDocument && record.id !== recordIdToIgnore);
+}
+
+async function submitPublicRecord(record) {
+  if (!hasFirebaseConfig() || !cloudDb) {
+    throw new Error('PUBLIC_FORM_NOT_AVAILABLE');
+  }
 
   const normalized = toRecordShape(record);
+  await cloudDb.collection(RECORDS_COLLECTION).doc(normalized.id).create(normalized);
+}
 
-  if (index >= 0) {
-    records[index] = { ...records[index], ...normalized };
+function resetPublicForm() {
+  if (!publicCandidateForm) {
+    return;
+  }
+
+  publicCandidateForm.reset();
+  togglePublicCustomProfile(false);
+}
+
+async function copyPublicRegistrationLink() {
+  const link = getPublicRegistrationUrl();
+
+  try {
+    await navigator.clipboard.writeText(link);
+    if (shareLinkNotice) {
+      shareLinkNotice.textContent = `Enlace copiado: ${link}`;
+    }
+  } catch {
+    window.prompt('Copie este enlace de inscripcion:', link);
+  }
+}
+
+function prepareRecordsForUniqueness(nextRecords) {
+  const uniqueRecords = [];
+  const seenDocuments = new Set();
+
+  nextRecords.forEach((record) => {
+    const normalized = toRecordShape(record);
+    const normalizedDocument = normalizeDocumentId(normalized.documentId);
+    if (!normalizedDocument || seenDocuments.has(normalizedDocument)) {
+      return;
+    }
+
+    uniqueRecords.push({
+      ...normalized,
+      id: isValidRecordKey(normalized.id) ? normalized.id : buildRecordKey(normalizedDocument),
+      documentId: normalizedDocument
+    });
+    seenDocuments.add(normalizedDocument);
+  });
+
+  return uniqueRecords;
+}
+
+async function upsertRecord(record) {
+  const normalized = toRecordShape(record);
+  const duplicateRecord = getDuplicateRecordByDocument(normalized.documentId, normalized.id);
+
+  if (duplicateRecord) {
+    throw new Error('DUPLICATED_DOCUMENT');
+  }
+
+  const previousRecordId = recordIdInput.value;
+  const existingIndexById = records.findIndex((item) => item.id === normalized.id);
+  const existingIndexByPreviousId = previousRecordId ? records.findIndex((item) => item.id === previousRecordId) : -1;
+  const targetIndex = existingIndexById >= 0 ? existingIndexById : existingIndexByPreviousId;
+
+  if (targetIndex >= 0) {
+    records[targetIndex] = { ...records[targetIndex], ...normalized };
   } else {
     records.unshift(normalized);
   }
@@ -503,6 +673,10 @@ async function upsertRecord(record) {
   }
 
   try {
+    if (previousRecordId && previousRecordId !== normalized.id) {
+      await cloudDb.collection(RECORDS_COLLECTION).doc(previousRecordId).delete();
+    }
+
     await cloudDb.collection(RECORDS_COLLECTION).doc(normalized.id).set(normalized, { merge: true });
     setSyncStatus('Sincronizado en nube', 'sync-online');
   } catch {
@@ -686,11 +860,78 @@ recordsTableBody.addEventListener('click', async (event) => {
 
 exportBtn.addEventListener('click', exportToExcel);
 
+if (shareLinkBtn) {
+  shareLinkBtn.addEventListener('click', copyPublicRegistrationLink);
+}
+
+if (publicProfileSelect) {
+  publicProfileSelect.addEventListener('change', () => {
+    togglePublicCustomProfile(publicProfileSelect.value === OTHER_PROFILE_VALUE);
+  });
+}
+
+if (publicCandidateForm) {
+  publicCandidateForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = getPublicFormData();
+
+    if (!formData.id) {
+      updatePublicMessage('Debe ingresar una cédula válida.', 'public-message-error');
+      return;
+    }
+
+    if (!formData.profile) {
+      updatePublicMessage('Debe seleccionar o escribir una profesión u oficio.', 'public-message-error');
+      return;
+    }
+
+    try {
+      publicSaveBtn.disabled = true;
+      updatePublicMessage('Enviando registro...', 'public-message-info');
+      await submitPublicRecord(formData);
+      updatePublicMessage('Registro enviado correctamente. Esta persona ya no podra inscribirse de nuevo con la misma cédula.', 'public-message-success');
+      resetPublicForm();
+    } catch (error) {
+      const code = error && typeof error === 'object' ? error.code : '';
+      if (code === 'already-exists' || code === 'ALREADY_EXISTS') {
+        updatePublicMessage('Esta persona ya fue inscrita anteriormente y no puede repetir el registro.', 'public-message-error');
+      } else if (error instanceof Error && error.message === 'PUBLIC_FORM_NOT_AVAILABLE') {
+        updatePublicMessage('El formulario publico requiere Firebase configurado y publicado para poder recibir registros.', 'public-message-error');
+      } else {
+        updatePublicMessage('No se pudo enviar el registro. Intente nuevamente.', 'public-message-error');
+      }
+    } finally {
+      publicSaveBtn.disabled = false;
+    }
+  });
+}
+
 populateProfiles();
+
+if (publicProfileSelect) {
+  const publicSelectMarkup = profileSelect.innerHTML;
+  publicProfileSelect.innerHTML = publicSelectMarkup;
+}
+
+records = prepareRecordsForUniqueness(records);
+saveRecords();
 renderTable();
 initializeCloudSync();
 
-if (isAuthenticated() && !FIREBASE_AUTH_REQUIRED) {
+if (isPublicMode) {
+  showPublicForm();
+  if (hasFirebaseConfig() && cloudDb) {
+    setPublicIntro('Este enlace permite registrar datos sin exponer la base de aspirantes.', 'public-message-info');
+    if (publicCandidateForm) {
+      publicCandidateForm.hidden = false;
+    }
+  } else {
+    setPublicIntro('Este formulario publico necesita Firebase configurado para recibir registros sin mostrar la base.', 'public-message-error');
+    if (publicCandidateForm) {
+      publicCandidateForm.hidden = true;
+    }
+  }
+} else if (isAuthenticated() && !FIREBASE_AUTH_REQUIRED) {
   showApp();
 } else {
   showLogin();
