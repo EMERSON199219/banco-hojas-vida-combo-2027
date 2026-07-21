@@ -603,7 +603,7 @@ async function submitPublicRecord(record) {
   }
 
   const normalized = toRecordShape(record);
-  await cloudDb.collection(RECORDS_COLLECTION).doc(normalized.id).create(normalized);
+  await cloudDb.collection(RECORDS_COLLECTION).doc(normalized.id).set(normalized);
 }
 
 function resetPublicForm() {
@@ -897,7 +897,7 @@ if (publicCandidateForm) {
       resetPublicForm();
     } catch (error) {
       const code = error && typeof error === 'object' ? error.code : '';
-      if (code === 'already-exists' || code === 'ALREADY_EXISTS') {
+      if (code === 'already-exists' || code === 'ALREADY_EXISTS' || code === 'permission-denied') {
         updatePublicMessage('Esta persona ya fue inscrita anteriormente y no puede repetir el registro.', 'public-message-error');
       } else if (error instanceof Error && error.message === 'PUBLIC_FORM_NOT_AVAILABLE') {
         updatePublicMessage('El formulario publico requiere Firebase configurado y publicado para poder recibir registros.', 'public-message-error');
