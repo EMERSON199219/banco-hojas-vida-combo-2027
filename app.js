@@ -6,7 +6,7 @@ const OTHER_PROFILE_VALUE = '__OTHER__';
 const RECORDS_COLLECTION = 'combo2027_records';
 const PUBLIC_MODE_QUERY_PARAM = 'registro';
 const PUBLIC_MODE_QUERY_VALUE = '1';
-const FIREBASE_AUTH_REQUIRED = true;
+const FIREBASE_AUTH_REQUIRED = false;
 
 // Reemplace estos valores con los de su proyecto Firebase para activar sincronizacion multi-dispositivo.
 const firebaseConfig = {
