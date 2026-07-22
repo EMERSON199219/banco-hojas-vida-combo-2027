@@ -20,9 +20,9 @@ service cloud.firestore {
     }
 
     match /combo2027_records/{recordId} {
-      allow read: if true;
-      allow create: if isPublicCreate(recordId);
-      allow update, delete: if true;
+      // Temporal: permitir lectura y escritura completa para facilitar sincronización
+      // Nota: esta regla es permisiva — revísala y ajústala a producción.
+      allow read, write: if true;
     }
 
     match /{document=**} {
