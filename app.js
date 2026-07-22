@@ -132,6 +132,9 @@ let cloudReady = false;
 let cloudAuth = null;
 let unsubscribeCloudRecords = null;
 let initialCloudSyncDone = false;
+let cloudRetryCount = 0;
+const CLOUD_RETRY_MAX = 6;
+const CLOUD_RETRY_BASE_DELAY = 3000; // ms
 const isPublicMode = new URLSearchParams(window.location.search).get(PUBLIC_MODE_QUERY_PARAM) === PUBLIC_MODE_QUERY_VALUE;
 
 function hasFirebaseConfig() {
@@ -190,6 +193,25 @@ function stopCloudRecordsListener() {
   }
 
   initialCloudSyncDone = false;
+}
+
+function scheduleCloudRetry() {
+  if (cloudRetryCount >= CLOUD_RETRY_MAX) {
+    setSyncStatus('No se pudo conectar a la nube (intentos agotados)', 'sync-offline');
+    return;
+  }
+
+  cloudRetryCount += 1;
+  const delay = CLOUD_RETRY_BASE_DELAY * Math.pow(2, cloudRetryCount - 1);
+  setSyncStatus(`Reintentando sincronizacion en ${Math.round(delay/1000)}s...`, 'sync-pending');
+  setTimeout(() => {
+    try {
+      initializeCloudSync();
+    } catch (err) {
+      console.error('Retry initializeCloudSync failed', err);
+      scheduleCloudRetry();
+    }
+  }, delay);
 }
 
 async function migrateLocalRecordsToCloud(localRecords) {
@@ -273,8 +295,11 @@ function startCloudRecordsListener() {
 
     applyRecords(cloudRecords);
     setSyncStatus('Sincronizado en nube', 'sync-online');
-  }, () => {
-    setSyncStatus('Error de sincronizacion', 'sync-offline');
+  }, (error) => {
+    console.error('Cloud listener error', error);
+    setSyncStatus('Error de sincronizacion - reintentando...', 'sync-offline');
+    stopCloudRecordsListener();
+    scheduleCloudRetry();
   });
 }
 
@@ -297,6 +322,9 @@ function initializeCloudSync() {
     cloudDb = firebase.firestore();
     cloudAuth = firebase.auth();
     cloudReady = true;
+
+    // Reset retry counter on successful init
+    cloudRetryCount = 0;
 
     if (!FIREBASE_AUTH_REQUIRED) {
       setSyncStatus('Sincronizando en nube...', 'sync-pending');
@@ -323,7 +351,9 @@ function initializeCloudSync() {
       }
     });
   } catch {
+    console.error('Error initializing Firebase SDK');
     setSyncStatus('Error de configuracion nube', 'sync-offline');
+    scheduleCloudRetry();
   }
 }
 
