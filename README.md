@@ -50,6 +50,19 @@ Ver detalles completos en FIREBASE_SETUP.md.
 
 ## Publicacion
 
+## Despliegue de reglas de Firestore (GitHub Actions)
+
+He añadido un workflow de GitHub Actions que despliega `firestore.rules` al proyecto Firebase `banco-de-hojas-de-vida-b3794` cuando se hace push a `main` o se ejecuta manualmente.
+
+Pasos para activar el despliegue automático:
+
+1. Instala la CLI de Firebase localmente y genera un token: `firebase login:ci`
+2. En tu repositorio de GitHub, ve a Settings → Secrets → Actions y crea el secret `FIREBASE_TOKEN` con el token generado.
+3. Haz push a `main` o ejecuta el workflow desde la pestaña Actions → Deploy Firestore Rules.
+
+Nota: el workflow usa el proyecto `banco-de-hojas-de-vida-b3794`. Asegúrate de tener permisos sobre ese proyecto.
+
+
 Este repositorio esta preparado para publicarse en GitHub Pages.
 
 ## Autor
